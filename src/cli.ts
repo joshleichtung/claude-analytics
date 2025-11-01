@@ -12,6 +12,9 @@ import { syncData } from './utils/sync.js';
 import chalk from 'chalk';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, formatDuration, format, subDays, eachDayOfInterval } from 'date-fns';
 import { writeFileSync } from 'fs';
+import { detectAllPatterns } from './utils/habit-detector.js';
+import { analyzeContextEfficiency, getContextOptimizationOpportunities } from './utils/context-efficiency.js';
+import { generateRecommendations, getSkillRecommendations } from './utils/best-practices.js';
 
 const program = new Command();
 
@@ -1068,6 +1071,150 @@ program
       console.log(chalk.dim('You can now analyze this data in spreadsheet software or other tools'));
     } catch (error) {
       console.error(chalk.red('✗ Export failed:'), error);
+      process.exit(1);
+    } finally {
+      closeDatabase(db);
+    }
+  });
+
+/**
+ * Habits command - analyze productivity habits and patterns
+ */
+program
+  .command('habits')
+  .description('Analyze your productivity habits and patterns')
+  .action(() => {
+    console.log(chalk.cyan.bold('Claude Analytics - Habit Analysis\n'));
+
+    const db = getDatabase();
+    try {
+      // Detect all patterns
+      const patterns = detectAllPatterns(db);
+      const efficiency = analyzeContextEfficiency(db);
+      const recommendations = generateRecommendations(db);
+      const skillRecs = getSkillRecommendations(db);
+
+      // Display streak
+      console.log(chalk.bold('🔥 Productivity Streak:\n'));
+      if (patterns.streak.current > 0) {
+        console.log(`  Current: ${chalk.yellow(patterns.streak.current)} ${patterns.streak.current === 1 ? 'day' : 'days'}`);
+        console.log(`  Longest: ${chalk.yellow(patterns.streak.longest)} ${patterns.streak.longest === 1 ? 'day' : 'days'}`);
+        if (patterns.streak.lastActive) {
+          console.log(`  Last active: ${chalk.dim(format(patterns.streak.lastActive, 'MMM d, yyyy'))}`);
+        }
+      } else {
+        console.log(chalk.dim('  No recent activity'));
+      }
+      console.log();
+
+      // Display time patterns
+      if (patterns.timePatterns.length > 0) {
+        console.log(chalk.bold('⏰ Time-of-Day Patterns:\n'));
+        patterns.timePatterns.slice(0, 3).forEach((pattern, i) => {
+          const confidence = pattern.confidence >= 80 ? chalk.green : pattern.confidence >= 60 ? chalk.yellow : chalk.dim;
+          console.log(chalk.cyan(`  ${i + 1}. ${pattern.name}`));
+          console.log(`     ${pattern.description}`);
+          console.log(`     Confidence: ${confidence(pattern.confidence.toFixed(0) + '%')} • ${pattern.frequency} sessions\n`);
+        });
+      }
+
+      // Display day patterns
+      if (patterns.dayPatterns.length > 0) {
+        console.log(chalk.bold('📅 Day-of-Week Patterns:\n'));
+        patterns.dayPatterns.forEach((pattern, i) => {
+          const confidence = pattern.confidence >= 80 ? chalk.green : pattern.confidence >= 60 ? chalk.yellow : chalk.dim;
+          console.log(chalk.cyan(`  ${i + 1}. ${pattern.name}`));
+          console.log(`     ${pattern.description}`);
+          console.log(`     Confidence: ${confidence(pattern.confidence.toFixed(0) + '%')} • ${pattern.frequency} sessions\n`);
+        });
+      }
+
+      // Display focus patterns
+      if (patterns.focusPatterns.length > 0) {
+        console.log(chalk.bold('🎯 Focus Patterns:\n'));
+        patterns.focusPatterns.slice(0, 2).forEach((pattern, i) => {
+          const confidence = pattern.confidence >= 80 ? chalk.green : pattern.confidence >= 60 ? chalk.yellow : chalk.dim;
+          console.log(chalk.cyan(`  ${i + 1}. ${pattern.name}`));
+          console.log(`     ${pattern.description}`);
+          console.log(`     Confidence: ${confidence(pattern.confidence.toFixed(0) + '%')}\n`);
+        });
+      }
+
+      // Display context efficiency
+      console.log(chalk.bold('💾 Context Efficiency:\n'));
+      const efficiencyColor =
+        efficiency.efficiency === 'excellent' ? chalk.green :
+        efficiency.efficiency === 'good' ? chalk.yellow :
+        efficiency.efficiency === 'fair' ? chalk.yellow :
+        chalk.red;
+
+      console.log(`  Overall: ${efficiencyColor(efficiency.efficiency.toUpperCase())}`);
+      console.log(`  Cache hit ratio: ${chalk.yellow(efficiency.cacheHitRatio + '%')}`);
+      console.log(`  Avg prompts/session: ${chalk.yellow(efficiency.averagePromptsPerSession)}`);
+      console.log(`  Avg session length: ${chalk.yellow(efficiency.averageSessionLength.toFixed(1) + ' min')}`);
+      console.log(`  Context resets: ${chalk.yellow(efficiency.contextResets)}\n`);
+
+      if (efficiency.recommendations.length > 0) {
+        console.log(chalk.bold('  Recommendations:'));
+        efficiency.recommendations.forEach((rec) => {
+          console.log(chalk.dim(`    • ${rec}`));
+        });
+        console.log();
+      }
+
+      // Display top recommendations
+      if (recommendations.length > 0) {
+        console.log(chalk.bold('💡 Top Recommendations:\n'));
+        recommendations.slice(0, 3).forEach((rec, i) => {
+          const priorityColor = rec.priority === 'high' ? chalk.red : rec.priority === 'medium' ? chalk.yellow : chalk.dim;
+          console.log(chalk.cyan(`  ${i + 1}. ${rec.title}`) + ` ${priorityColor(`[${rec.priority}]`)}`);
+          console.log(`     ${rec.description}`);
+          console.log(chalk.green(`     Impact: ${rec.impact}`));
+          if (rec.actionItems.length > 0) {
+            console.log(chalk.bold('     Action items:'));
+            rec.actionItems.forEach((action) => {
+              console.log(chalk.dim(`       • ${action}`));
+            });
+          }
+          console.log();
+        });
+      }
+
+      // Display skill recommendations
+      if (skillRecs.length > 0) {
+        console.log(chalk.bold('🚀 Skill Development:\n'));
+        skillRecs.forEach((skill) => {
+          const levelColor =
+            skill.currentLevel === 'advanced' ? chalk.green :
+            skill.currentLevel === 'intermediate' ? chalk.yellow :
+            chalk.dim;
+
+          console.log(chalk.cyan(`  ${skill.skill}`) + ` • ${levelColor(skill.currentLevel)}`);
+          if (skill.nextSteps.length > 0) {
+            console.log(chalk.bold('  Next steps:'));
+            skill.nextSteps.forEach((step) => {
+              console.log(chalk.dim(`    • ${step}`));
+            });
+          }
+          console.log();
+        });
+      }
+
+      // Display context optimization opportunities
+      const opportunities = getContextOptimizationOpportunities(db);
+      if (opportunities.length > 0) {
+        console.log(chalk.bold('💰 Cost Optimization Opportunities:\n'));
+        opportunities.slice(0, 3).forEach((opp, i) => {
+          const projectName = opp.project.split('/').pop();
+          console.log(chalk.cyan(`  ${i + 1}. ${projectName}`));
+          console.log(`     Issue: ${opp.issue}`);
+          console.log(`     Recommendation: ${opp.recommendation}`);
+          console.log(chalk.green(`     Potential savings: ${opp.potentialSavings}\n`));
+        });
+      }
+
+    } catch (error) {
+      console.error(chalk.red('✗ Failed to analyze habits:'), error);
       process.exit(1);
     } finally {
       closeDatabase(db);
