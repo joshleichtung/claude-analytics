@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test output
+coverage/
+.nyc_output/
+
+# Environment
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Database (optional - user may want to track)
+*.db
+*.db-shm
+*.db-wal
+
+# Test exports
+*.csv
+*.json
+!package.json
+!tsconfig.json
