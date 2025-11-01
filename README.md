@@ -167,6 +167,41 @@ Options:
 - `-o, --output <file>` - Output file path (auto-generated if omitted)
 - `--days <number>` - Limit to last N days (default: 30)
 
+### Analyze Habits
+
+```bash
+claude-stats habits
+```
+
+Comprehensive habit and productivity analysis:
+
+**Productivity Patterns:**
+- 🔥 Current and longest streaks
+- ⏰ Time-of-day patterns (Morning Coder, Night Owl, etc.)
+- 📅 Day-of-week patterns (Weekend Warrior, Weekday Grinder)
+- 🎯 Focus patterns (Single Project Focus, Multi-Project Juggler)
+
+**Context Efficiency:**
+- Overall efficiency rating (excellent/good/fair/poor)
+- Cache hit ratio analysis
+- Session metrics (avg prompts, length, resets)
+- Personalized recommendations
+
+**Recommendations:**
+- Top 3 actionable recommendations by priority
+- Specific action items for improvement
+- Impact estimates
+
+**Skill Development:**
+- Current skill level assessment
+- Next steps for growth
+- Mastery progression tracking
+
+**Cost Optimization:**
+- Projects that could benefit from caching
+- Poor cache hit ratio identification
+- Potential savings estimates
+
 ## Data Storage
 
 Analytics data is stored in SQLite database at:
@@ -196,12 +231,12 @@ The database schema includes:
 - [x] Session heatmap visualization
 - [x] Export to CSV/JSON
 
-### Phase 3: Habit Tracking
-- [ ] Pattern detection algorithms
-- [ ] Productivity streak tracking
-- [ ] Context efficiency analysis
-- [ ] Tool usage patterns
-- [ ] Best practice recommendations
+### Phase 3: Habit Tracking ✅
+- [x] Pattern detection algorithms (time, day, focus)
+- [x] Productivity streak tracking (current & longest)
+- [x] Context efficiency analysis
+- [x] Usage pattern detection (Multi-Project Juggler, Context Switcher, etc.)
+- [x] Best practice recommendations (personalized, prioritized)
 
 ### Phase 4: Skill Progression
 - [ ] Skill taxonomy (frameworks, languages, tools)
