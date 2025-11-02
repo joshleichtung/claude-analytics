@@ -16,6 +16,16 @@ import { detectAllPatterns } from './utils/habit-detector.js';
 import { analyzeContextEfficiency, getContextOptimizationOpportunities } from './utils/context-efficiency.js';
 import { generateRecommendations, getSkillRecommendations } from './utils/best-practices.js';
 import { analyzeSkillProficiency, getSkillProgress, compareSkills } from './utils/skill-proficiency.js';
+import {
+  getUnlockedAchievements,
+  getNewAchievements,
+  saveAchievement,
+  checkStreakAchievements,
+  checkSkillAchievements,
+  checkCostAchievements,
+  checkProductivityAchievements,
+  checkMilestoneAchievements,
+} from './utils/achievements.js';
 
 const program = new Command();
 
@@ -1401,6 +1411,159 @@ program
       console.log(chalk.gray('  Use --category <category> to filter by category'));
     } catch (error) {
       console.error(chalk.red('✗ Failed to analyze skills:'), error);
+      process.exit(1);
+    } finally {
+      closeDatabase(db);
+    }
+  });
+
+/**
+ * Achievements command - view unlocked achievements and progress
+ */
+program
+  .command('achievements')
+  .alias('badges')
+  .description('View your unlocked achievements and track progress')
+  .option('--check', 'Check for new achievements without auto-unlocking')
+  .option('--unlock', 'Check and automatically unlock new achievements')
+  .action((options) => {
+    console.log(chalk.cyan.bold('Claude Analytics - Achievements\n'));
+
+    const db = getDatabase();
+    try {
+      if (options.unlock) {
+        // Check for and unlock new achievements
+        const newAchievements = getNewAchievements(db);
+
+        if (newAchievements.length > 0) {
+          console.log(chalk.yellow('🎉 Unlocking new achievements...\n'));
+
+          for (const achievement of newAchievements) {
+            saveAchievement(db, achievement);
+            console.log(
+              chalk.green(
+                `${achievement.icon} ${chalk.bold(achievement.title)}`
+              )
+            );
+            console.log(chalk.gray(`   ${achievement.description}\n`));
+          }
+        } else {
+          console.log(chalk.gray('No new achievements to unlock.\n'));
+        }
+      }
+
+      // Get all unlocked achievements
+      const unlocked = getUnlockedAchievements(db);
+
+      if (unlocked.length === 0) {
+        console.log(chalk.gray('No achievements unlocked yet. Keep coding to earn your first achievement!'));
+        console.log(chalk.gray('\nTip: Run "claude-stats achievements --unlock" to check and unlock achievements.'));
+        return;
+      }
+
+      // Group by type
+      const byType: Record<string, typeof unlocked> = {
+        streak: [],
+        skill: [],
+        cost: [],
+        productivity: [],
+        milestone: [],
+      };
+
+      for (const achievement of unlocked) {
+        byType[achievement.type]?.push(achievement);
+      }
+
+      console.log(chalk.bold(`🏆 Unlocked Achievements (${unlocked.length} total)\n`));
+
+      // Display by category
+      if (byType.streak.length > 0) {
+        console.log(chalk.yellow.bold('🔥 Streak Achievements:\n'));
+        byType.streak.forEach((a) => {
+          console.log(`  ${a.icon} ${chalk.bold(a.title)}`);
+          console.log(chalk.gray(`     ${a.description}`));
+          console.log(chalk.dim(`     Unlocked: ${format(a.unlockedAt, 'MMM d, yyyy')}\n`));
+        });
+      }
+
+      if (byType.skill.length > 0) {
+        console.log(chalk.green.bold('📚 Skill Achievements:\n'));
+        byType.skill.forEach((a) => {
+          console.log(`  ${a.icon} ${chalk.bold(a.title)}`);
+          console.log(chalk.gray(`     ${a.description}`));
+          console.log(chalk.dim(`     Unlocked: ${format(a.unlockedAt, 'MMM d, yyyy')}\n`));
+        });
+      }
+
+      if (byType.productivity.length > 0) {
+        console.log(chalk.cyan.bold('⚡ Productivity Achievements:\n'));
+        byType.productivity.forEach((a) => {
+          console.log(`  ${a.icon} ${chalk.bold(a.title)}`);
+          console.log(chalk.gray(`     ${a.description}`));
+          console.log(chalk.dim(`     Unlocked: ${format(a.unlockedAt, 'MMM d, yyyy')}\n`));
+        });
+      }
+
+      if (byType.cost.length > 0) {
+        console.log(chalk.magenta.bold('💰 Cost Optimization Achievements:\n'));
+        byType.cost.forEach((a) => {
+          console.log(`  ${a.icon} ${chalk.bold(a.title)}`);
+          console.log(chalk.gray(`     ${a.description}`));
+          console.log(chalk.dim(`     Unlocked: ${format(a.unlockedAt, 'MMM d, yyyy')}\n`));
+        });
+      }
+
+      if (byType.milestone.length > 0) {
+        console.log(chalk.blue.bold('🎖️  Milestone Achievements:\n'));
+        byType.milestone.forEach((a) => {
+          console.log(`  ${a.icon} ${chalk.bold(a.title)}`);
+          console.log(chalk.gray(`     ${a.description}`));
+          console.log(chalk.dim(`     Unlocked: ${format(a.unlockedAt, 'MMM d, yyyy')}\n`));
+        });
+      }
+
+      // Show progress if --check flag
+      if (options.check) {
+        console.log(chalk.bold('\n📊 Achievement Progress:\n'));
+
+        const allChecks = [
+          ...checkStreakAchievements(db),
+          ...checkSkillAchievements(db),
+          ...checkCostAchievements(db),
+          ...checkProductivityAchievements(db),
+          ...checkMilestoneAchievements(db),
+        ];
+
+        const unlockedIds = new Set(unlocked.map((a) => a.id));
+        const inProgress = allChecks.filter(
+          (check) => !check.achieved && check.progress
+        );
+
+        if (inProgress.length === 0) {
+          console.log(chalk.gray('  No achievements in progress.'));
+        } else {
+          inProgress.slice(0, 5).forEach((check) => {
+            if (check.progress) {
+              const pct = Math.round(check.progress.percentage);
+              const barLength = 20;
+              const filled = Math.floor((pct / 100) * barLength);
+              const bar = '█'.repeat(filled) + '░'.repeat(barLength - filled);
+
+              console.log(`  ${chalk.gray(bar)} ${chalk.yellow(pct + '%')}`);
+              console.log(
+                chalk.gray(
+                  `  ${check.progress.current}/${check.progress.target}\n`
+                )
+              );
+            }
+          });
+        }
+      }
+
+      console.log(chalk.gray('\nTip: Use --unlock to automatically unlock new achievements'));
+      console.log(chalk.gray('     Use --check to see progress toward locked achievements'));
+    } catch (error) {
+      console.error(chalk.red('✗ Failed to display achievements:'), error);
       process.exit(1);
     } finally {
       closeDatabase(db);
