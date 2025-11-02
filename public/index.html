@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Analytics Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #334155;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: #f1f5f9;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .achievement {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: #0f172a;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .achievement-icon {
+            font-size: 1.5rem;
+        }
+
+        .achievement-content {
+            flex: 1;
+        }
+
+        .achievement-title {
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .achievement-desc {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .skill {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #334155;
+        }
+
+        .skill:last-child {
+            border-bottom: none;
+        }
+
+        .skill-name {
+            font-weight: 500;
+        }
+
+        .skill-level {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-expert {
+            background: #c026d3;
+            color: #fae8ff;
+        }
+
+        .badge-advanced {
+            background: #22c55e;
+            color: #dcfce7;
+        }
+
+        .badge-intermediate {
+            background: #eab308;
+            color: #fef9c3;
+        }
+
+        .badge-beginner {
+            background: #64748b;
+            color: #f1f5f9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+
+        .error {
+            background: #7f1d1d;
+            color: #fecaca;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: #764ba2;
+        }
+
+        .pattern {
+            padding: 0.75rem;
+            background: #0f172a;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .pattern-title {
+            font-weight: 600;
+            color: #f1f5f9;
+            margin-bottom: 0.25rem;
+        }
+
+        .pattern-desc {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Claude Analytics Dashboard</h1>
+            <p class="subtitle">Track your coding habits, skills, and achievements</p>
+        </header>
+
+        <div id="error"></div>
+        <div id="loading" class="loading">Loading analytics...</div>
+        <div id="content" style="display: none;">
+            <!-- Overview Stats -->
+            <div class="grid">
+                <div class="card">
+                    <h2>📈 Overview</h2>
+                    <div class="stat">
+                        <span class="stat-label">Total Sessions</span>
+                        <span class="stat-value" id="total-sessions">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Total Prompts</span>
+                        <span class="stat-value" id="total-prompts">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Total Hours</span>
+                        <span class="stat-value" id="total-hours">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Projects</span>
+                        <span class="stat-value" id="total-projects">-</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>📅 This Week</h2>
+                    <div class="stat">
+                        <span class="stat-label">Sessions</span>
+                        <span class="stat-value" id="week-sessions">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Prompts</span>
+                        <span class="stat-value" id="week-prompts">-</span>
+                    </div>
+                    <button class="refresh-btn" onclick="loadDashboard()">Refresh Data</button>
+                </div>
+            </div>
+
+            <!-- Achievements -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <h2>🏆 Recent Achievements</h2>
+                <div id="achievements"></div>
+            </div>
+
+            <!-- Skills and Habits -->
+            <div class="grid">
+                <div class="card">
+                    <h2>💪 Top Skills</h2>
+                    <div id="skills"></div>
+                </div>
+
+                <div class="card">
+                    <h2>🎯 Habits & Patterns</h2>
+                    <div id="habits"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadDashboard() {
+            const loading = document.getElementById('loading');
+            const content = document.getElementById('content');
+            const errorDiv = document.getElementById('error');
+
+            loading.style.display = 'block';
+            content.style.display = 'none';
+            errorDiv.innerHTML = '';
+
+            try {
+                // Load overview
+                const overview = await fetch('/api/overview').then(r => r.json());
+                document.getElementById('total-sessions').textContent = overview.totalSessions;
+                document.getElementById('total-prompts').textContent = overview.totalPrompts;
+                document.getElementById('total-hours').textContent = overview.totalHours + 'h';
+                document.getElementById('total-projects').textContent = overview.totalProjects;
+                document.getElementById('week-sessions').textContent = overview.thisWeek.sessions;
+                document.getElementById('week-prompts').textContent = overview.thisWeek.prompts;
+
+                // Load achievements
+                const achievements = await fetch('/api/achievements').then(r => r.json());
+                const achievementsDiv = document.getElementById('achievements');
+                if (achievements.length === 0) {
+                    achievementsDiv.innerHTML = '<p style="color: #64748b;">No achievements unlocked yet.</p>';
+                } else {
+                    achievementsDiv.innerHTML = achievements.slice(0, 5).map(a => `
+                        <div class="achievement">
+                            <div class="achievement-icon">${a.icon}</div>
+                            <div class="achievement-content">
+                                <div class="achievement-title">${a.title}</div>
+                                <div class="achievement-desc">${a.description}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Load skills
+                const skills = await fetch('/api/skills').then(r => r.json());
+                const skillsDiv = document.getElementById('skills');
+                if (skills.length === 0) {
+                    skillsDiv.innerHTML = '<p style="color: #64748b;">No skills detected yet.</p>';
+                } else {
+                    skillsDiv.innerHTML = skills.slice(0, 6).map(s => `
+                        <div class="skill">
+                            <span class="skill-name">${s.skill}</span>
+                            <div class="skill-level">
+                                <span style="color: #94a3b8;">${s.proficiency}%</span>
+                                <span class="badge badge-${s.level}">${s.level.toUpperCase()}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                // Load habits
+                const habits = await fetch('/api/habits').then(r => r.json());
+                const habitsDiv = document.getElementById('habits');
+                const patterns = [];
+
+                if (habits.patterns.timePatterns && habits.patterns.timePatterns.length > 0) {
+                    const top = habits.patterns.timePatterns[0];
+                    patterns.push(`
+                        <div class="pattern">
+                            <div class="pattern-title">⏰ ${top.pattern}</div>
+                            <div class="pattern-desc">${top.confidence}% confidence</div>
+                        </div>
+                    `);
+                }
+
+                if (habits.patterns.dayPatterns && habits.patterns.dayPatterns.length > 0) {
+                    const top = habits.patterns.dayPatterns[0];
+                    patterns.push(`
+                        <div class="pattern">
+                            <div class="pattern-title">📅 ${top.pattern}</div>
+                            <div class="pattern-desc">${top.confidence}% confidence</div>
+                        </div>
+                    `);
+                }
+
+                if (habits.patterns.streak) {
+                    patterns.push(`
+                        <div class="pattern">
+                            <div class="pattern-title">🔥 ${habits.patterns.streak.current}-Day Streak</div>
+                            <div class="pattern-desc">Longest: ${habits.patterns.streak.longest} days</div>
+                        </div>
+                    `);
+                }
+
+                if (habits.efficiency) {
+                    patterns.push(`
+                        <div class="pattern">
+                            <div class="pattern-title">💎 ${habits.efficiency.efficiency.toUpperCase()} Efficiency</div>
+                            <div class="pattern-desc">Cache hit: ${habits.efficiency.cacheHitRatio}%</div>
+                        </div>
+                    `);
+                }
+
+                habitsDiv.innerHTML = patterns.length > 0
+                    ? patterns.join('')
+                    : '<p style="color: #64748b;">Gathering habit data...</p>';
+
+                loading.style.display = 'none';
+                content.style.display = 'block';
+            } catch (error) {
+                loading.style.display = 'none';
+                errorDiv.innerHTML = `
+                    <div class="error">
+                        Failed to load dashboard data. Make sure the server is running and database is accessible.
+                    </div>
+                `;
+                console.error('Dashboard error:', error);
+            }
+        }
+
+        // Load on page load
+        loadDashboard();
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadDashboard, 30000);
+    </script>
+</body>
+</html>
