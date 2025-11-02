@@ -15,6 +15,7 @@ import { writeFileSync } from 'fs';
 import { detectAllPatterns } from './utils/habit-detector.js';
 import { analyzeContextEfficiency, getContextOptimizationOpportunities } from './utils/context-efficiency.js';
 import { generateRecommendations, getSkillRecommendations } from './utils/best-practices.js';
+import { analyzeSkillProficiency, getSkillProgress, compareSkills } from './utils/skill-proficiency.js';
 
 const program = new Command();
 
@@ -1215,6 +1216,191 @@ program
 
     } catch (error) {
       console.error(chalk.red('✗ Failed to analyze habits:'), error);
+      process.exit(1);
+    } finally {
+      closeDatabase(db);
+    }
+  });
+
+/**
+ * Skills command - analyze skill proficiency and learning paths
+ */
+program
+  .command('skills')
+  .description('Analyze your skill proficiency and track learning progress')
+  .option('-s, --skill <name>', 'Show detailed progress for a specific skill')
+  .option('-c, --category <category>', 'Filter by category (framework, language, tool, platform, concept)')
+  .option('-l, --limit <number>', 'Limit number of skills shown', '20')
+  .action((options) => {
+    console.log(chalk.cyan.bold('Claude Analytics - Skill Proficiency\n'));
+
+    const db = getDatabase();
+    try {
+      const proficiencies = analyzeSkillProficiency(db);
+
+      if (proficiencies.length === 0) {
+        console.log(chalk.yellow('No skills detected yet. Start working on projects to track your skill progression!'));
+        return;
+      }
+
+      // Show specific skill details
+      if (options.skill) {
+        const skill = proficiencies.find(
+          (s) => s.skill.toLowerCase() === options.skill.toLowerCase()
+        );
+
+        if (!skill) {
+          console.log(chalk.red(`Skill "${options.skill}" not found.`));
+          console.log(chalk.gray('\nAvailable skills:'));
+          proficiencies.slice(0, 10).forEach((s) => {
+            console.log(chalk.gray(`  - ${s.skill}`));
+          });
+          return;
+        }
+
+        console.log(chalk.bold(`📚 ${skill.skill}\n`));
+        console.log(`  Category: ${chalk.cyan(skill.category)}`);
+        console.log(`  Level: ${chalk.yellow(skill.level.toUpperCase())}`);
+        console.log(`  Proficiency: ${chalk.green(skill.proficiency + '%')}`);
+        console.log(`  Usage: ${skill.usageCount} sessions`);
+        console.log(`  First used: ${format(skill.firstUsed, 'MMM d, yyyy')}`);
+        console.log(`  Last used: ${format(skill.lastUsed, 'MMM d, yyyy')}`);
+        console.log(`  Experience: ${skill.daysSinceFirstUse} days`);
+        console.log(`  Consistency: ${skill.consistency}%`);
+        console.log(`  Depth: ${skill.depth}%`);
+
+        if (skill.relatedSkills.length > 0) {
+          console.log(chalk.bold('\n  Related Skills:'));
+          skill.relatedSkills.forEach((s) => {
+            console.log(chalk.gray(`    - ${s}`));
+          });
+        }
+
+        console.log(chalk.bold('\n  Next Milestone:'));
+        console.log(chalk.green(`    ${skill.nextMilestone}`));
+
+        // Show progress over time
+        const progress = getSkillProgress(db, skill.skill);
+        if (progress.length > 0) {
+          console.log(chalk.bold('\n  Progress Over Time:\n'));
+          progress.slice(-6).forEach((p) => {
+            const bar = '█'.repeat(Math.floor(p.sessions / 2));
+            console.log(`    ${p.month}: ${chalk.cyan(bar)} ${p.sessions} sessions (avg ${p.avgDepth} prompts)`);
+          });
+        }
+
+        return;
+      }
+
+      // Filter by category if specified
+      let filteredSkills = proficiencies;
+      if (options.category) {
+        filteredSkills = proficiencies.filter(
+          (s) => s.category.toLowerCase() === options.category.toLowerCase()
+        );
+
+        if (filteredSkills.length === 0) {
+          console.log(chalk.red(`No skills found in category "${options.category}"`));
+          console.log(chalk.gray('\nAvailable categories: framework, language, tool, platform, concept'));
+          return;
+        }
+      }
+
+      // Show skill comparison
+      const comparison = compareSkills(proficiencies);
+
+      if (comparison.strongest.length > 0) {
+        console.log(chalk.bold('💪 Strongest Skills:\n'));
+        comparison.strongest.forEach((skill, i) => {
+          const levelColor =
+            skill.level === 'expert'
+              ? chalk.magenta
+              : skill.level === 'advanced'
+              ? chalk.green
+              : chalk.yellow;
+
+          console.log(
+            `  ${i + 1}. ${chalk.cyan(skill.skill)} - ${levelColor(skill.level.toUpperCase())} ${chalk.gray(
+              `(${skill.proficiency}%)`
+            )}`
+          );
+          console.log(
+            `     ${skill.usageCount} sessions, ${skill.daysSinceFirstUse} days experience`
+          );
+          console.log(chalk.gray(`     ${skill.nextMilestone}\n`));
+        });
+      }
+
+      if (comparison.emerging.length > 0) {
+        console.log(chalk.bold('🌱 Emerging Skills:\n'));
+        comparison.emerging.forEach((skill, i) => {
+          console.log(
+            `  ${i + 1}. ${chalk.green(skill.skill)} - ${chalk.yellow(skill.level.toUpperCase())} ${chalk.gray(
+              `(${skill.proficiency}%)`
+            )}`
+          );
+          console.log(`     Recently started, ${skill.usageCount} sessions so far`);
+          console.log(chalk.gray(`     ${skill.nextMilestone}\n`));
+        });
+      }
+
+      if (comparison.needsPractice.length > 0) {
+        console.log(chalk.bold('⚠️  Skills Needing Practice:\n'));
+        comparison.needsPractice.forEach((skill, i) => {
+          const daysSinceUse = Math.floor(
+            (new Date().getTime() - skill.lastUsed.getTime()) / (1000 * 60 * 60 * 24)
+          );
+          console.log(
+            `  ${i + 1}. ${chalk.gray(skill.skill)} - ${chalk.dim(skill.level.toUpperCase())} ${chalk.gray(
+              `(${skill.proficiency}%)`
+            )}`
+          );
+          console.log(
+            chalk.gray(`     Last used ${daysSinceUse} days ago, consistency: ${skill.consistency}%\n`)
+          );
+        });
+      }
+
+      // Show all skills table
+      const limit = parseInt(options.limit);
+      console.log(chalk.bold(`\n📊 All Skills (top ${Math.min(limit, filteredSkills.length)}):\n`));
+
+      console.log(
+        chalk.gray(
+          '  ' +
+            'Skill'.padEnd(20) +
+            'Category'.padEnd(12) +
+            'Level'.padEnd(15) +
+            'Score'.padEnd(8) +
+            'Sessions'.padEnd(10)
+        )
+      );
+      console.log(chalk.gray('  ' + '-'.repeat(75)));
+
+      filteredSkills.slice(0, limit).forEach((skill) => {
+        const levelColor =
+          skill.level === 'expert'
+            ? chalk.magenta
+            : skill.level === 'advanced'
+            ? chalk.green
+            : skill.level === 'intermediate'
+            ? chalk.yellow
+            : chalk.gray;
+
+        console.log(
+          '  ' +
+            chalk.cyan(skill.skill.padEnd(20)) +
+            chalk.dim(skill.category.padEnd(12)) +
+            levelColor(skill.level.padEnd(15)) +
+            chalk.green((skill.proficiency + '%').padEnd(8)) +
+            skill.usageCount.toString().padEnd(10)
+        );
+      });
+
+      console.log(chalk.gray('\n  Use --skill <name> to see detailed progress for a specific skill'));
+      console.log(chalk.gray('  Use --category <category> to filter by category'));
+    } catch (error) {
+      console.error(chalk.red('✗ Failed to analyze skills:'), error);
       process.exit(1);
     } finally {
       closeDatabase(db);
