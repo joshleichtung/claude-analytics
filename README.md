@@ -10,8 +10,12 @@ Analytics and habit tracking for Claude Code usage. Track your sessions, prompts
 - 📅 Daily/weekly/monthly reports
 - 🔥 Activity heatmaps and export
 - 🎯 Habit pattern detection
-- 🚀 Skill progression tracking
+- 🚀 Skill progression tracking (30+ skills)
 - 💡 Personalized best practice recommendations
+- 🏆 Achievement system (50+ achievements)
+- 🔔 Slack/Discord notifications
+- 🌐 Web dashboard with REST API
+- ⚡ Real-time monitoring via hooks
 
 ## Installation
 
@@ -259,6 +263,94 @@ claude-stats skills --limit 10
 - **Platforms**: PostgreSQL, MongoDB, Redis, AWS, Vercel
 - **Concepts**: AI/ML, Web Audio
 
+### Achievements
+
+```bash
+claude-stats achievements
+```
+
+Track and celebrate your coding milestones with a comprehensive achievement system.
+
+**Achievement Categories:**
+- 🔥 **Streak Achievements**: 3-day, 7-day, 30-day, 90-day, 365-day streaks
+- 📚 **Skill Achievements**: Advanced and Expert level proficiency unlocks
+- ⚡ **Productivity Achievements**: Session and prompt milestones (10, 50, 100, 500, 1000+)
+- 💰 **Cost Optimization**: Cache efficiency achievements (80%+, 90%+)
+- 🎖️  **Milestones**: Time-based and special achievements (Weekend Warrior, etc.)
+
+**Options:**
+- `--unlock` - Check for and automatically unlock new achievements
+- `--check` - View progress toward locked achievements
+
+**Examples:**
+```bash
+# View all unlocked achievements
+claude-stats achievements
+
+# Check and unlock new achievements
+claude-stats achievements --unlock
+
+# See progress toward next achievements
+claude-stats achievements --check
+```
+
+### Web Dashboard
+
+Launch a local web dashboard to visualize your analytics:
+
+```bash
+npm run dashboard
+```
+
+Then open http://localhost:3000 in your browser.
+
+**Dashboard Features:**
+- 📊 Real-time overview statistics
+- 🏆 Recent achievements display
+- 💪 Top skills visualization
+- 🎯 Habit patterns and streaks
+- 🔄 Auto-refresh every 30 seconds
+
+**API Endpoints:**
+- `GET /api/overview` - Overall statistics
+- `GET /api/achievements` - Unlocked achievements
+- `GET /api/skills` - Skill proficiency data
+- `GET /api/habits` - Habit patterns and efficiency
+- `GET /api/activity` - Activity heatmap data
+- `GET /api/projects` - Top projects by cost
+
+### Real-Time Monitoring
+
+Set up automatic syncing and achievement detection after each session. See [HOOKS.md](HOOKS.md) for full installation guide.
+
+**Quick Setup:**
+```bash
+# Create hook script
+cat > ~/.claude/hooks/analytics-post-session.sh <<'EOF'
+#!/bin/bash
+node ~/projects/claude-analytics/dist/hooks/post-session.js
+EOF
+
+chmod +x ~/.claude/hooks/analytics-post-session.sh
+```
+
+**Hook Features:**
+- ✅ Auto-sync after each session
+- 🎉 Real-time achievement detection
+- 🔔 Optional Slack/Discord notifications
+- 📊 Silent background updates
+
+**Notification Setup:**
+```bash
+# Slack
+export ANALYTICS_WEBHOOK_URL="https://hooks.slack.com/services/YOUR/WEBHOOK"
+export ANALYTICS_PLATFORM="slack"
+
+# Discord
+export ANALYTICS_WEBHOOK_URL="https://discord.com/api/webhooks/YOUR/WEBHOOK"
+export ANALYTICS_PLATFORM="discord"
+```
+
 ## Data Storage
 
 Analytics data is stored in SQLite database at:
@@ -269,8 +361,8 @@ The database schema includes:
 - `prompts` - Individual prompt entries
 - `projects` - Aggregated project statistics
 - `daily_stats` - Daily rollup statistics
-- `habits` - Detected habit patterns (future)
-- `skills` - Skill progression tracking (future)
+- `achievements` - Unlocked achievements and milestones
+- `metadata` - System metadata (last sync time, etc.)
 
 ## Roadmap
 
@@ -301,11 +393,12 @@ The database schema includes:
 - [x] Learning path recommendations (related skills)
 - [x] Milestone achievements (progress tracking)
 
-### Phase 5: Integration
-- [ ] Real-time monitoring (hook integration)
-- [ ] Slack/Discord notifications
-- [ ] Web dashboard
-- [ ] Compare with other developers (anonymized)
+### Phase 5: Integration ✅
+- [x] Real-time monitoring (hook integration with auto-sync)
+- [x] Achievement detection system (50+ achievements)
+- [x] Slack/Discord notifications (webhook-based)
+- [x] Web dashboard (Express + REST API)
+- [ ] Compare with other developers (anonymized) - Future
 
 ## Development
 
