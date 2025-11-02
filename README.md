@@ -2,6 +2,28 @@
 
 Analytics and habit tracking for Claude Code usage. Track your sessions, prompts, costs, and skill progression over time.
 
+## Quick Start
+
+```bash
+# Clone and install
+git clone https://github.com/joshleichtung/claude-analytics.git
+cd claude-analytics
+npm install
+npm run build
+
+# Link globally to use from anywhere
+npm link
+
+# Sync your data
+claude-stats sync
+
+# View your stats
+claude-stats today
+claude-stats habits
+claude-stats skills
+claude-stats achievements --unlock
+```
+
 ## Features
 
 - 📊 Session and prompt tracking
@@ -351,6 +373,63 @@ export ANALYTICS_WEBHOOK_URL="https://discord.com/api/webhooks/YOUR/WEBHOOK"
 export ANALYTICS_PLATFORM="discord"
 ```
 
+## Command Reference
+
+### Data Management
+```bash
+claude-stats sync              # Sync data from Claude Code history
+```
+
+### Analytics & Reports
+```bash
+claude-stats today             # Today's statistics
+claude-stats week              # This week's statistics
+claude-stats month             # This month's statistics
+claude-stats projects          # List projects (with -l, -s options)
+claude-stats cost              # Cost breakdown by project
+claude-stats optimize          # Optimization suggestions
+claude-stats heatmap           # Activity heatmap (with -d option)
+```
+
+### Advanced Analysis
+```bash
+claude-stats habits            # Comprehensive habit and pattern analysis
+claude-stats skills            # Skill proficiency analysis
+claude-stats skills --skill "Next.js"  # Detailed skill progress
+claude-stats skills --category framework  # Filter by category
+claude-stats achievements      # View unlocked achievements
+claude-stats achievements --unlock  # Unlock new achievements
+claude-stats achievements --check   # Progress toward locked achievements
+```
+
+### Data Export
+```bash
+claude-stats export sessions   # Export sessions to CSV/JSON
+claude-stats export projects   # Export projects to CSV/JSON
+claude-stats export prompts    # Export prompts to CSV/JSON
+claude-stats export daily      # Export daily stats to CSV/JSON
+```
+
+### Web Dashboard
+```bash
+npm run dashboard              # Launch web dashboard on :3000
+```
+
+### Options Examples
+```bash
+# Projects with custom sort and limit
+claude-stats projects -l 20 -s cost
+
+# Export with custom format and time range
+claude-stats export sessions -f json --days 30
+
+# Heatmap for last 60 days
+claude-stats heatmap -d 60
+
+# Cost analysis with minimum threshold
+claude-stats cost --min 1.00
+```
+
 ## Data Storage
 
 Analytics data is stored in SQLite database at:
@@ -430,17 +509,29 @@ npm run typecheck
 
 ```
 src/
-├── cli.ts              # CLI entry point
-├── types/              # TypeScript types and Zod schemas
-├── parsers/            # History and config parsers
+├── cli.ts                      # CLI entry point with all commands
+├── types/                      # TypeScript types and Zod schemas
+├── parsers/                    # History and config parsers
 │   ├── history-parser.ts
 │   └── project-parser.ts
-├── database/           # SQLite schema and connection
+├── database/                   # SQLite schema and connection
 │   ├── db.ts
 │   └── schema.ts
-├── utils/              # Utilities (sync, etc.)
-│   └── sync.ts
-└── commands/           # CLI command implementations (future)
+├── utils/                      # Core utilities
+│   ├── sync.ts                 # Data synchronization
+│   ├── habit-detector.ts       # Habit pattern detection
+│   ├── context-efficiency.ts  # Cache efficiency analysis
+│   ├── best-practices.ts       # Recommendation engine
+│   ├── skill-taxonomy.ts       # Skill definitions (30+ skills)
+│   ├── skill-proficiency.ts    # Proficiency scoring
+│   ├── achievements.ts         # Achievement detection (50+)
+│   └── notifications.ts        # Slack/Discord/webhook notifications
+├── hooks/                      # Claude Code hook integration
+│   └── post-session.ts         # Auto-sync and achievement detection
+├── server/                     # Web dashboard
+│   └── dashboard.ts            # Express API server
+└── public/                     # Dashboard UI
+    └── index.html              # Web dashboard interface
 ```
 
 ## Relationship to Contextualizer
