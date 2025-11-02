@@ -7,9 +7,11 @@ Analytics and habit tracking for Claude Code usage. Track your sessions, prompts
 - 📊 Session and prompt tracking
 - 💰 Cost and token usage analytics
 - 📈 Project-level statistics
-- 🎯 Habit pattern detection (coming soon)
-- 🚀 Skill progression tracking (coming soon)
-- 📅 Daily/weekly/monthly reports (coming soon)
+- 📅 Daily/weekly/monthly reports
+- 🔥 Activity heatmaps and export
+- 🎯 Habit pattern detection
+- 🚀 Skill progression tracking
+- 💡 Personalized best practice recommendations
 
 ## Installation
 
@@ -202,6 +204,61 @@ Comprehensive habit and productivity analysis:
 - Poor cache hit ratio identification
 - Potential savings estimates
 
+### Skill Proficiency
+
+```bash
+claude-stats skills
+```
+
+Track your skill development and proficiency across frameworks, languages, tools, and platforms.
+
+**Overview Display:**
+- 💪 **Strongest Skills**: Top 5 skills with proficiency ≥60% (expert/advanced level)
+- 🌱 **Emerging Skills**: Top 3 intermediate-level skills started within 90 days
+- ⚠️  **Skills Needing Practice**: Skills with low consistency (<50%) and >30 days since last use
+- 📊 **All Skills Table**: Comprehensive view with skill/category/level/score/sessions
+
+**Options:**
+- `-s, --skill <name>` - Show detailed progress for a specific skill
+- `-c, --category <type>` - Filter by category (framework, language, tool, platform, concept)
+- `-l, --limit <number>` - Limit number of skills shown (default: 20)
+
+**Detailed Skill View** (`--skill <name>`):
+- Proficiency score and level (beginner/intermediate/advanced/expert)
+- Usage statistics (sessions, first/last used dates)
+- Experience duration and consistency metrics
+- Related skills and learning recommendations
+- Next milestone with progress indicator
+- Monthly progress visualization
+
+**Proficiency Calculation:**
+- 40% usage count (logarithmic scale)
+- 20% time investment (days of experience)
+- 20% consistency (recency and regularity)
+- 20% depth (average session quality)
+
+**Examples:**
+```bash
+# Overview of all skills
+claude-stats skills
+
+# Detailed Next.js progress
+claude-stats skills --skill "Next.js"
+
+# Framework skills only
+claude-stats skills --category framework
+
+# Top 10 skills
+claude-stats skills --limit 10
+```
+
+**Detected Skills Include:**
+- **Frameworks**: Next.js, React, Vue, Angular, Svelte, Express, NestJS, Rails
+- **Languages**: TypeScript, JavaScript, Python, Ruby, Go, Rust
+- **Tools**: Git, Docker, Webpack, Vite, Vitest, Jest, Claude Code
+- **Platforms**: PostgreSQL, MongoDB, Redis, AWS, Vercel
+- **Concepts**: AI/ML, Web Audio
+
 ## Data Storage
 
 Analytics data is stored in SQLite database at:
@@ -238,11 +295,11 @@ The database schema includes:
 - [x] Usage pattern detection (Multi-Project Juggler, Context Switcher, etc.)
 - [x] Best practice recommendations (personalized, prioritized)
 
-### Phase 4: Skill Progression
-- [ ] Skill taxonomy (frameworks, languages, tools)
-- [ ] Usage-based proficiency scoring
-- [ ] Learning path recommendations
-- [ ] Milestone achievements
+### Phase 4: Skill Progression ✅
+- [x] Skill taxonomy (frameworks, languages, tools, platforms, concepts)
+- [x] Usage-based proficiency scoring (weighted algorithm)
+- [x] Learning path recommendations (related skills)
+- [x] Milestone achievements (progress tracking)
 
 ### Phase 5: Integration
 - [ ] Real-time monitoring (hook integration)
